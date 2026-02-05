@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sinh viên - ST23C</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem 1rem;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(90deg, #0d6efd, #0b5ed7);
+            color: white;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: #0d6efd;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #0b5ed7;
+        }
+        .table th {
+            background-color: #e9ecef;
+            font-weight: 500;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f1f3f5;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .input-group-text {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="mb-4 text-center fw-bold text-primary">Quản lý Sinh viên - ST23C</h2>
+
+    <!-- Form thêm/sửa -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="bi bi-person-plus-fill me-2"></i>Thêm / Cập nhật Sinh viên
+        </div>
+        <div class="card-body">
+            <form id="studentForm">
+                <input type="hidden" id="studentId">
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Họ và tên</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="name" required placeholder="Nguyễn Văn A">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="age" class="form-label">Tuổi</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-cake2"></i></span>
+                            <input type="number" class="form-control" id="age" min="16" max="60" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="studentIdInput" class="form-label">ID Sinh viên</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                            <input type="number" class="form-control" id="studentIdInput" readonly placeholder="Tự động khi thêm mới">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label for="email" class="form-label">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" required placeholder="example@edu.vn">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="button" class="btn btn-primary px-4" onclick="saveStudent()">
+                        <i class="bi bi-save me-2"></i>Lưu
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-4" onclick="clearForm()">
+                        <i class="bi bi-arrow-repeat me-2"></i>Làm mới
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tìm kiếm + Bảng -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div><i class="bi bi-list-ul me-2"></i>Danh sách Sinh viên</div>
+            <div class="d-flex align-items-center gap-2">
+                <input type="text" class="form-control form-control-sm" id="keyword" placeholder="Tìm theo tên..." style="width: 220px;">
+                <button class="btn btn-light btn-sm" onclick="searchStudent()">
+                    <i class="bi bi-search"></i>
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="loadStudents()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0" id="studentTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>IDSV</th>
+                            <th>Họ và tên</th>
+                            <th>Tuổi</th>
+                            <th>Email</th>
+                            <th class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API_URL = "/api/students";
+
+    async function loadStudents() {
+        try {
+            const res = await fetch(API_URL);
+            if (!res.ok) throw new Error('Lỗi tải dữ liệu');
+            const data = await res.json();
+            renderTable(data);
+        } catch (err) {
+            alert("Không thể tải danh sách: " + err.message);
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.querySelector("#studentTable tbody");
+        tbody.innerHTML = data.map(s => `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.id}</td> <!-- tạm dùng id làm IDSV, bạn có thể thay bằng s.studentId nếu backend có -->
+                <td>${s.name}</td>
+                <td>${s.age}</td>
+                <td>${s.email}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editStudent(${s.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent(${s.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function searchStudent() {
+        const kw = document.getElementById("keyword").value.trim();
+        if (!kw) {
+            loadStudents();
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(kw)}`);
+            const data = await res.json();
+            renderTable(data);
+        } catch (err) {
+            alert("Lỗi tìm kiếm: " + err.message);
+        }
+    }
+
+    async function saveStudent() {
+        const id = document.getElementById("studentId").value;
+        const name = document.getElementById("name").value.trim();
+        const age = document.getElementById("age").value;
+        const email = document.getElementById("email").value.trim();
+
+        if (!name || !age || !email) {
+            alert("Vui lòng điền đầy đủ thông tin!");
+            return;
+        }
+
+        const student = { name, age: Number(age), email };
+
+        try {
+            let url = API_URL;
+            let method = 'POST';
+
+            if (id) {
+                url = `${API_URL}/update/${id}`;
+            } else {
+                // Nếu backend không tự tăng ID → vẫn cần prompt như cũ
+                const nextId = prompt("Nhập ID Sinh viên mới (vì DB không tự tăng):");
+                if (!nextId) return;
+                student.id = Number(nextId);
+            }
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(student)
+            });
+
+            if (!res.ok) throw new Error('Lưu thất bại');
+            clearForm();
+            loadStudents();
+        } catch (err) {
+            alert("Lỗi khi lưu: " + err.message);
+        }
+    }
+
+    async function deleteStudent(id) {
+        if (!confirm("Bạn có chắc muốn xóa sinh viên này?")) return;
+        try {
+            const res = await fetch(`${API_URL}/delete/${id}`, { method: 'POST' });
+            if (!res.ok) throw new Error('Xóa thất bại');
+            loadStudents();
+        } catch (err) {
+            alert("Lỗi khi xóa: " + err.message);
+        }
+    }
+
+    async function editStudent(id) {
+        try {
+            const res = await fetch(`${API_URL}/${id}`);
+            if (!res.ok) throw new Error('Không tìm thấy');
+            const s = await res.json();
+
+            document.getElementById("studentId").value = s.id;
+            document.getElementById("studentIdInput").value = s.id; // hiển thị
+            document.getElementById("name").value = s.name;
+            document.getElementById("age").value = s.age;
+            document.getElementById("email").value = s.email;
+        } catch (err) {
+            alert("Lỗi khi lấy thông tin: " + err.message);
+        }
+    }
+
+    function clearForm() {
+        document.getElementById("studentId").value = "";
+        document.getElementById("studentIdInput").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("age").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("keyword").value = "";
+    }
+
+    // Load ban đầu
+    loadStudents();
+</script>
+</body>
+</html>
