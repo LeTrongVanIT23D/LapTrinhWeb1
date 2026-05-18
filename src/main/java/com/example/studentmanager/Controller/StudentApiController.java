@@ -7,9 +7,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
 @RestController
 @RequestMapping("/api/students")
+@CrossOrigin("*")
 public class StudentApiController {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi Server: " + e.getMessage());
+    }
 
     @Autowired
     private StudentService service;
@@ -39,14 +50,14 @@ public class StudentApiController {
     }
 
     // Yêu cầu 6: Cập nhật sinh viên
-    @PostMapping("/update/{id}")
+    @PutMapping("/{id}")
     public Student update(@PathVariable int id, @RequestBody Student student) {
         student.setId(id);
         return service.save(student);
     }
 
     // Yêu cầu 2: Xóa sinh viên
-    @PostMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public String delete(@PathVariable int id) {
         service.delete(id);
         return "Xóa thành công sinh viên ID: " + id;
