@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/student-tuitions")
+@CrossOrigin("*")
 public class StudentTuitionApiController {
 
     @Autowired
